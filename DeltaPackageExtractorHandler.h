@@ -3,6 +3,8 @@
 
 #include <map>
 
+#include <string.h>
+
 #include <Path.h>
 #include <String.h>
 
@@ -15,7 +17,7 @@
 struct DeltaPackageEntryInfo;
 
 #include "dpkg_addon.h"
-
+using namespace std;
 using namespace BPackageKit::BHPKG;
 
 struct DeltaPackageEntryInfo {
@@ -28,7 +30,7 @@ struct DeltaPackageEntryInfo {
 
 struct cmp_str {
 	bool operator()(const char* a, const char* b) {
-		return std::strcmp(a, b) < 0;
+		return strcmp(a, b) < 0;
 	}
 };
 
@@ -48,6 +50,8 @@ struct DeltaPackageExtractorHandler : BPackageContentHandler {
 	void				HandleErrorOccurred();
 	void				SetHeapReader(BAbstractBufferedDataReader* reader)
 							{ fHeapReader = reader; }
+	BAbstractBufferedDataReader* HeapReader() { return fHeapReader; }
+
 	void*				GetData(BPackageData& data);
 	
 	map<const char*, DeltaPackageEntryInfo*, cmp_str> PackageEntries()
@@ -58,6 +62,29 @@ private:
 	BPath												fPath;
 	map<const char*, DeltaPackageEntryInfo*, cmp_str>	fPackageEntries;
 	BAbstractBufferedDataReader*						fHeapReader;
+};
+
+struct PackageNameContentHandler : BPackageContentHandler {
+	
+	
+						PackageNameContentHandler();
+	status_t			HandleEntry(BPackageEntry* entry);
+	status_t			HandleEntryAttribute(BPackageEntry* entry,
+									BPackageEntryAttribute* attribute);
+	status_t			HandleEntryDone(BPackageEntry* entry);
+
+	status_t			HandlePackageAttribute(
+									const BPackageInfoAttributeValue& value
+									);
+
+	void				HandleErrorOccurred();
+
+	map<const char*, BPackageData, cmp_str>	PackageEntries()
+		{ return fPackageEntries; }
+
+private:
+	map<const char*, BPackageData, cmp_str>	fPackageEntries;
+	BPath							fPath;
 };
 
 #endif
