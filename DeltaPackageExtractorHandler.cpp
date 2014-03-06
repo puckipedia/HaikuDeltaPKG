@@ -41,6 +41,15 @@ DeltaPackageExtractorHandler::HandleEntry(BPackageEntry* entry)
 	
 	info->fStringPath = this->fPath.Path();
 	
+	info->fDataSize = entry->Data().Size();
+	info->fDataEncodedInline = entry->Data().IsEncodedInline();
+	
+	if (info->fDataEncodedInline) {
+		memcpy(info->fInlineData, entry->Data().InlineData(), B_HPKG_MAX_INLINE_DATA_SIZE);
+	} else {
+		info->fDataOffset = entry->Data().Offset();
+	}
+	
 	entry->SetUserToken(info);
 	
 	return B_OK;
@@ -100,54 +109,5 @@ DeltaPackageExtractorHandler::HandlePackageAttribute(const BPackageInfoAttribute
 
 void
 DeltaPackageExtractorHandler::HandleErrorOccurred()
-{
-}
-
-PackageNameContentHandler::PackageNameContentHandler()
-{
-	this->fPath = "/";
-}
-
-status_t
-PackageNameContentHandler::HandleEntry(BPackageEntry* entry)
-{
-	this->fPath.Append(entry->Name());
-	printf("Added data to %s\n", this->fPath.Path());
-	if(entry->Data().IsEncodedInline()) {
-		printf("Data: Inline, %d bytes\n\n", entry->Data().Size());
-	} else {
-		BPackageData& data = entry->Data();
-		printf("Data: Heap, %d offest, %d bytes\n\n", data.Offset(), data.Size());
-	}
-	BPackageData d = entry->Data();
-	fPackageEntries[this->fPath.Path()] = d;
-	return B_OK;
-}
-
-
-status_t
-PackageNameContentHandler::HandleEntryAttribute(BPackageEntry* entry, BPackageEntryAttribute* attribute)
-{
-	return B_OK;
-}
-
-
-status_t
-PackageNameContentHandler::HandleEntryDone(BPackageEntry* entry)
-{
-	this->fPath.GetParent(&this->fPath);
-	return B_OK;
-}
-
-
-status_t
-PackageNameContentHandler::HandlePackageAttribute(const BPackageInfoAttributeValue& value)
-{
-	return B_OK;
-}
-
-
-void
-PackageNameContentHandler::HandleErrorOccurred()
 {
 }

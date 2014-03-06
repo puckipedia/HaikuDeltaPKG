@@ -25,6 +25,15 @@ struct DeltaPackageEntryInfo {
 	uint64 fExtractedSize;
 	BString fStringPath;
 	BPackageEntry* fPackageEntry;
+
+	uint64 fDataSize : 63;
+	bool fDataEncodedInline : 1;
+
+	union {
+		uint64 fDataOffset;
+		uint8 fInlineData[B_HPKG_MAX_INLINE_DATA_SIZE];
+	};
+
 	bool fHandled;
 };
 
@@ -62,29 +71,6 @@ private:
 	BPath												fPath;
 	map<const char*, DeltaPackageEntryInfo*, cmp_str>	fPackageEntries;
 	BAbstractBufferedDataReader*						fHeapReader;
-};
-
-struct PackageNameContentHandler : BPackageContentHandler {
-	
-	
-						PackageNameContentHandler();
-	status_t			HandleEntry(BPackageEntry* entry);
-	status_t			HandleEntryAttribute(BPackageEntry* entry,
-									BPackageEntryAttribute* attribute);
-	status_t			HandleEntryDone(BPackageEntry* entry);
-
-	status_t			HandlePackageAttribute(
-									const BPackageInfoAttributeValue& value
-									);
-
-	void				HandleErrorOccurred();
-
-	map<const char*, BPackageData, cmp_str>	PackageEntries()
-		{ return fPackageEntries; }
-
-private:
-	map<const char*, BPackageData, cmp_str>	fPackageEntries;
-	BPath							fPath;
 };
 
 #endif

@@ -21,6 +21,15 @@ DeltaPackageExtractor* CreateCopyPackageExtractor();
 
 status_t ReadPackage(DeltaPackageExtractorHandler* handler, const char* pfn)
 {
+	status_t error;
+	BStandardErrorOutput errorOtput;
+	BPackageReader pakageReader(&errorOtput);
+	handler.SetHeapReader(pakageReader.HeapReader());
+	error = pakageReader.Init(pfn);
+	if (error != B_OK)
+		return error;
+	
+	return pakageReader.ParseContent(handler);
 }
 
 BMemoryIO* GetData(BPackageData& data, BAbstractBufferedDataReader* heapReader) {
@@ -49,14 +58,7 @@ int main(int argc, const char** argv) {
 	const char* pfn = argv[1];
 	DeltaPackageExtractorHandler handler;
 
-	BStandardErrorOutput errorOtput;
-	BPackageReader pakageReader(&errorOtput);
-	handler.SetHeapReader(pakageReader.HeapReader());
-	error = pakageReader.Init(pfn);
-	if (error != B_OK)
-		return error;
-	
-	pakageReader.ParseContent(&handler);
+	ReadPackage(&handler, pfn);
 
 	map<const char*, DeltaPackageEntryInfo*, cmp_str> ding = handler.PackageEntries();
 
@@ -64,19 +66,9 @@ int main(int argc, const char** argv) {
 	writerParameters.SetFlags(B_HPKG_WRITER_UPDATE_PACKAGE);
 
 		
-	PackageNameContentHandler nameHandler;
+	DeltaPackageExtractorHandler nameHandler;
 	
-	BStandardErrorOutput errorOutput;
-	BPackageReader packageReader(&errorOutput);
-	error = packageReader.Init(argv[2]);
-	if (error != B_OK)
-		return 1;
-	
-	BAbstractBufferedDataReader* reader = packageReader.HeapReader();
-	if ((error = packageReader.ParseContent(&nameHandler)) != B_OK)
-		return 1;
-	
-	
+	ReadPackage(&nameHandler, argv[2]);
 	
 	BPackageWriter packageWriter(NULL);
 
