@@ -24,8 +24,8 @@ status_t ReadPackage(DeltaPackageExtractorHandler* handler, const char* pfn)
 	status_t error;
 	BStandardErrorOutput errorOtput;
 	BPackageReader pakageReader(&errorOtput);
-	handler->SetHeapReader(pakageReader.HeapReader());
 	error = pakageReader.Init(pfn);
+	handler->SetHeapReader(pakageReader.HeapReader());
 	if (error != B_OK)
 		return error;
 	
@@ -39,8 +39,9 @@ BMemoryIO* GetData(DeltaPackageEntryInfo* data, BAbstractBufferedDataReader* hea
 	} else {
 		printf("Data: Heap, %x offest, %x bytes\n", data->fDataOffset, data->fDataSize);
 		void* vData = malloc(data->fDataSize);
-		heapReader->ReadData(data->fDataOffset, vData, data->fDataSize);
-		return new BMemoryIO(vData, data->fDataSize);
+		BMemoryIO* io = new BMemoryIO(vData, data->fDataSize);
+		heapReader->ReadDataToOutput(data->fDataOffset, data->fDataSize, io);
+		return io;
 	}
 }
 
