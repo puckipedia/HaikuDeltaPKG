@@ -36,12 +36,10 @@ status_t ReadPackage(DeltaPackageExtractorHandler* handler, const char* pfn, BPa
 }
 
 BMemoryIO* GetData(DeltaPackageEntryInfo* data, BAbstractBufferedDataReader* heapReader) {
+
 	if(data->fDataEncodedInline) {
-		printf("Data: Inline, %x bytes\n", data->fDataSize);
 		return new BMemoryIO((const void*)data->fInlineData, data->fDataSize);
 	} else {
-		printf("HeapReader: %s\n", typeid(heapReader).name());
-		printf("Data: Heap, %x offest, %x bytes\n", data->fDataOffset, data->fDataSize);
 		void* vData = malloc(data->fDataSize);
 		BMemoryIO* io = new BMemoryIO(vData, data->fDataSize);
 		heapReader->ReadDataToOutput(data->fDataOffset, data->fDataSize, io);
@@ -87,7 +85,6 @@ int main(int argc, const char** argv) {
 	
 	for (iter_t it = ding.begin(); it != ding.end(); it++) {
 		DeltaPackageExtractor* ex = DeltaPackageExtractorHandler::gDeltaFileHandlers[it->second->fHandlerID];
-		printf("ex = %x\n", ex);
 		if (ex != NULL) {
 			char buffer[L_tmpnam];
 			tmpnam(buffer);

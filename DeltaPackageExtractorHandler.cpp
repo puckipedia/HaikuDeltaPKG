@@ -93,8 +93,6 @@ DeltaPackageExtractorHandler::HandleEntryDone(BPackageEntry* entry)
 	
 	fPackageEntries[info->fStringPath.String()] = info;
 	
-	printf("Entry %s done! %.4s %"B_PRIu64"\n", info->fStringPath.String(), (char*)&what, info->fExtractedSize);
-	
 	return B_OK;
 }
 
