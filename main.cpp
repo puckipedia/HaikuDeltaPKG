@@ -24,7 +24,7 @@ status_t ReadPackage(DeltaPackageExtractorHandler* handler, const char* pfn)
 	status_t error;
 	BStandardErrorOutput errorOtput;
 	BPackageReader pakageReader(&errorOtput);
-	handler.SetHeapReader(pakageReader.HeapReader());
+	handler->SetHeapReader(pakageReader.HeapReader());
 	error = pakageReader.Init(pfn);
 	if (error != B_OK)
 		return error;
@@ -32,15 +32,15 @@ status_t ReadPackage(DeltaPackageExtractorHandler* handler, const char* pfn)
 	return pakageReader.ParseContent(handler);
 }
 
-BMemoryIO* GetData(BPackageData& data, BAbstractBufferedDataReader* heapReader) {
-	if(data.IsEncodedInline()) {
-		printf("Data: Inline, %x bytes\n", data.Size());
-		return new BMemoryIO((const void*)data.InlineData(), data.Size());
+BMemoryIO* GetData(DeltaPackageEntryInfo* data, BAbstractBufferedDataReader* heapReader) {
+	if(data->fDataEncodedInline) {
+		printf("Data: Inline, %x bytes\n", data->fDataSize);
+		return new BMemoryIO((const void*)data->fInlineData, data->fDataSize);
 	} else {
-		printf("Data: Heap, %x offest, %x bytes\n", data.Offset(), data.Size());
-		void* vData = malloc(data.Size());
-		heapReader->ReadData(data.Offset(), vData, data.Size());
-		return new BMemoryIO(vData, data.Size());
+		printf("Data: Heap, %x offest, %x bytes\n", data->fDataOffset, data->fDataSize);
+		void* vData = malloc(data->fDataSize);
+		heapReader->ReadData(data->fDataOffset, vData, data->fDataSize);
+		return new BMemoryIO(vData, data->fDataSize);
 	}
 }
 
@@ -77,8 +77,8 @@ int main(int argc, const char** argv) {
 		return 1;
 
 	typedef map<const char*, DeltaPackageEntryInfo*, cmp_str>::iterator iter_t;
-	
-	map<const char*, BPackageData, cmp_str> datata = nameHandler.PackageEntries();
+
+	map<const char*, DeltaPackageEntryInfo*, cmp_str> datata = nameHandler.PackageEntries();
 	
 	for (iter_t it = ding.begin(); it != ding.end(); it++) {
 		DeltaPackageExtractor* ex = DeltaPackageExtractorHandler::gDeltaFileHandlers[it->second->fHandlerID];
@@ -88,10 +88,10 @@ int main(int argc, const char** argv) {
 			
 			BFile file(buffer, B_CREATE_FILE | B_READ_WRITE);
 			
-			BPackageData data = datata[it->second->fStringPath];
+			DeltaPackageEntryInfo* info = datata[it->second->fStringPath];
 			
-			BMemoryIO* origFile = GetData(data, reader);
-			BMemoryIO* deltaPackage = GetData(it->second->fPackageEntry->Data(), handler.HeapReader());
+			BMemoryIO* origFile = GetData(info, nameHandler.HeapReader());
+			BMemoryIO* deltaPackage = GetData(it->second, handler.HeapReader());
 			ex->Extract(it->second, origFile, deltaPackage, &file);
 			
 			printf("Would run %s on %s into %s\n", ex->Name(), it->first, buffer);
