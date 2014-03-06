@@ -86,7 +86,6 @@ status_t
 DeltaPackageExtractorHandler::HandleEntryDone(BPackageEntry* entry)
 {	
 	DeltaPackageEntryInfo* info = static_cast<DeltaPackageEntryInfo*>(entry->UserToken());
-	info->fPackageEntry = entry;
 	
 	int32 what = B_BENDIAN_TO_HOST_INT32(info->fHandlerID);
 	

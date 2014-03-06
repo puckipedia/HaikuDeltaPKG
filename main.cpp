@@ -9,6 +9,8 @@
 
 #include <map>
 
+#include <typeinfo>
+
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -19,17 +21,18 @@ using namespace BPackageKit::BHPKG;
 
 DeltaPackageExtractor* CreateCopyPackageExtractor();
 
-status_t ReadPackage(DeltaPackageExtractorHandler* handler, const char* pfn)
+status_t ReadPackage(DeltaPackageExtractorHandler* handler, const char* pfn, BPackageReader** reader)
 {
 	status_t error;
 	BStandardErrorOutput errorOtput;
-	BPackageReader pakageReader(&errorOtput);
-	error = pakageReader.Init(pfn);
-	handler->SetHeapReader(pakageReader.HeapReader());
+	BPackageReader *pakageReader = new BPackageReader(&errorOtput);
+	*reader = pakageReader;
+	error = pakageReader->Init(pfn);
+	handler->SetHeapReader(pakageReader->HeapReader());
 	if (error != B_OK)
 		return error;
 	
-	return pakageReader.ParseContent(handler);
+	return pakageReader->ParseContent(handler);
 }
 
 BMemoryIO* GetData(DeltaPackageEntryInfo* data, BAbstractBufferedDataReader* heapReader) {
@@ -37,6 +40,7 @@ BMemoryIO* GetData(DeltaPackageEntryInfo* data, BAbstractBufferedDataReader* hea
 		printf("Data: Inline, %x bytes\n", data->fDataSize);
 		return new BMemoryIO((const void*)data->fInlineData, data->fDataSize);
 	} else {
+		printf("HeapReader: %s\n", typeid(heapReader).name());
 		printf("Data: Heap, %x offest, %x bytes\n", data->fDataOffset, data->fDataSize);
 		void* vData = malloc(data->fDataSize);
 		BMemoryIO* io = new BMemoryIO(vData, data->fDataSize);
@@ -58,8 +62,8 @@ int main(int argc, const char** argv) {
 
 	const char* pfn = argv[1];
 	DeltaPackageExtractorHandler handler;
-
-	ReadPackage(&handler, pfn);
+	BPackageReader* handlerReader;
+	ReadPackage(&handler, pfn, &handlerReader);
 
 	map<const char*, DeltaPackageEntryInfo*, cmp_str> ding = handler.PackageEntries();
 
@@ -68,8 +72,8 @@ int main(int argc, const char** argv) {
 
 		
 	DeltaPackageExtractorHandler nameHandler;
-	
-	ReadPackage(&nameHandler, argv[2]);
+	BPackageReader* nameHandlerReader;
+	ReadPackage(&nameHandler, argv[2], &nameHandlerReader);
 	
 	BPackageWriter packageWriter(NULL);
 
@@ -83,6 +87,7 @@ int main(int argc, const char** argv) {
 	
 	for (iter_t it = ding.begin(); it != ding.end(); it++) {
 		DeltaPackageExtractor* ex = DeltaPackageExtractorHandler::gDeltaFileHandlers[it->second->fHandlerID];
+		printf("ex = %x\n", ex);
 		if (ex != NULL) {
 			char buffer[L_tmpnam];
 			tmpnam(buffer);
@@ -93,13 +98,13 @@ int main(int argc, const char** argv) {
 			
 			BMemoryIO* origFile = GetData(info, nameHandler.HeapReader());
 			BMemoryIO* deltaPackage = GetData(it->second, handler.HeapReader());
-			ex->Extract(it->second, origFile, deltaPackage, &file);
 			
 			printf("Would run %s on %s into %s\n", ex->Name(), it->first, buffer);
+			ex->Extract(it->second, origFile, deltaPackage, &file);
 		}
 	}
 	
-	printf("%d\n", ding.size());
+	//printf("%d\n", ding.size());
 
 	return 0;
 }

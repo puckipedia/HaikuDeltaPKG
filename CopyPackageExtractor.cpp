@@ -11,12 +11,9 @@ public:
 	virtual void Extract(DeltaPackageEntryInfo* info, BPositionIO* ActualFile,
 		BPositionIO* DeltaPackage, BPositionIO* Result) {
 			DeltaPackage->Seek(0, SEEK_SET);
-			printf("Seeked to start\n");
 			void* data = malloc(sizeof(uint8)*1024);
-			printf("Malloced %d bytes of mem\n", sizeof(uint8)*1024);
 			ssize_t size = 0;
 			while((size = DeltaPackage->Read(data, 1024)) != 0) {
-				printf("Read %d bytes of data\n", size);
 				Result->Write(data, size);
 			}
 			free(data);

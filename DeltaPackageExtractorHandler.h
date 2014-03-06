@@ -24,7 +24,6 @@ struct DeltaPackageEntryInfo {
 	int32 fHandlerID;
 	uint64 fExtractedSize;
 	BString fStringPath;
-	BPackageEntry* fPackageEntry;
 
 	uint64 fDataSize : 63;
 	bool fDataEncodedInline : 1;
